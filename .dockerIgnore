@@ -1,0 +1,26 @@
+# Python
+__pycache__
+*.pyc
+.venv
+
+# Local data
+uploads
+vector_store
+
+# Git
+.git
+.gitignore
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+
+# Node (if frontend leaks in)
+node_modules
+.next
+
+# HuggingFace cache
+.cache
