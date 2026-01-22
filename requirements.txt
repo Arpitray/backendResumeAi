@@ -9,3 +9,4 @@ pypdf
 redis
 httpx
 python-dotenv
+huggingface_hub<0.20
