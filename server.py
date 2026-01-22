@@ -3,6 +3,7 @@ from fastapi import UploadFile, File, HTTPException
 import os
 import uuid
 import json
+import redis
 from reader import read_pdf, chunk_text
 from memory import (
     get_job_chunks,
@@ -34,6 +35,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+REDIS_URL = os.getenv("REDIS_URL")
+
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 
 class QuestionRequest(BaseModel):
     resume_id: str
