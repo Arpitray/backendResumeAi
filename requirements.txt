@@ -1,8 +1,10 @@
 fastapi
 uvicorn
-chromadb
-sentence-transformers
+chromadb==0.4.22
+sentence-transformers==2.2.2
+torch==2.2.2+cpu
 pypdf
 redis
 httpx
 python-dotenv
+--extra-index-url https://download.pytorch.org/whl/cpu
