@@ -5,8 +5,12 @@ import uuid
 import redis
 import numpy as np
 import httpx
+from dotenv import load_dotenv
 
-REDIS = redis.Redis(host="localhost", port=6379, decode_responses=True)
+load_dotenv()
+
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+REDIS = redis.from_url(REDIS_URL, decode_responses=True)
 
 MISTRAL_KEY = os.getenv("Mistral_API_KEY")
 
