@@ -2,8 +2,7 @@ services:
   - type: web
     name: resume-ai-backend
     env: python
-    buildCommand: uv pip install --system -r requirements.txt
+    rootDir: backend
+    runtime: python-3.11.9
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.9

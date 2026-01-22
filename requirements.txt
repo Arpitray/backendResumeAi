@@ -2,12 +2,12 @@ fastapi
 uvicorn
 chromadb==0.4.22
 numpy==1.26.4
-sentence-transformers==2.2.2
 torch==2.10.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
 pypdf
 redis
 httpx
 python-dotenv
-huggingface_hub<0.20
+sentence-transformers==2.7.0
+huggingface-hub==0.19.4
 python-multipart

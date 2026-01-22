@@ -235,14 +235,6 @@ Be encouraging and specific. Avoid generic advice.
         }
 
 
-def get_model():
-    global _model
-    if _model is None:
-        print("🧠 Loading embedding model...")
-        _model = SentenceTransformer("all-MiniLM-L6-v2")
-    return _model
-
-
 _chroma = None
 _collection = None
 
@@ -322,9 +314,6 @@ def store_chunks(chunks, doc_id, doc_type="resume"):
         return
 
     col = get_collection()
-    model = get_model()
-
-    embeddings = model.encode(chunks).tolist()
 
     ids = []
     metadatas = []
@@ -340,7 +329,8 @@ def store_chunks(chunks, doc_id, doc_type="resume"):
             }
         )
 
-    col.add(documents=chunks, embeddings=embeddings, metadatas=metadatas, ids=ids)
+    # Let Chroma handle internal embeddings (defaults to ONNX all-MiniLM-L6-v2)
+    col.add(documents=chunks, metadatas=metadatas, ids=ids)
 
     print("📦 Collection count after add:", col.count())
     print("✅ store_chunks() complete\n")
@@ -394,15 +384,47 @@ def search_resume(query, resume_id, k=3):
         query_texts=[query],
         n_results=k,
         where={"doc_id": resume_id},
-        include=["documents", "distances"]
+        include=["documents", "distances", "metadatas"]
     )
 
     chunks = []
     for i, doc in enumerate(results["documents"][0]):
+        meta = results["metadatas"][0][i] if results["metadatas"] else {}
         chunks.append({
             "text": doc,
-            "score": round(1 - results["distances"][0][i], 3)
+            "score": round(1 - results["distances"][0][i], 3),
+            "chunk_id": meta.get("chunk_id", i),
+            "preview": meta.get("preview", doc[:120])
         })
+
+    return chunks
+
+
+def search_job(query, job_id, k=3):
+    col = get_collection()
+
+    results = col.query(
+        query_texts=[query],
+        n_results=k,
+        where={
+            "$and": [
+                {"doc_id": job_id},
+                {"type": "job"}
+            ]
+        },
+        include=["documents", "distances", "metadatas"]
+    )
+
+    chunks = []
+    if results["documents"] and results["documents"][0]:
+        for i, doc in enumerate(results["documents"][0]):
+            meta = results["metadatas"][0][i] if results["metadatas"] else {}
+            chunks.append({
+                "text": doc,
+                "score": round(1 - results["distances"][0][i], 3),
+                "chunk_id": meta.get("chunk_id", i),
+                "preview": meta.get("preview", doc[:120])
+            })
 
     return chunks
 

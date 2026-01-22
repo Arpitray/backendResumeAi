@@ -11,6 +11,7 @@ from memory import (
     match_resume_to_job,
     store_chunks,
     search_resume,
+    search_job,
 )
 
 from fastapi.middleware.cors import CORSMiddleware
