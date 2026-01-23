@@ -58,18 +58,24 @@ Make your tone helpful and encouraging, not robotic.
 
     # Parse JSON response
     import json
+    import re  # Added re import for better cleanup
 
     try:
         # Clean up potential markdown code blocks
         cleaned = reply.strip()
-        if cleaned.startswith("```json"):
-            cleaned = cleaned[7:]
-        if cleaned.startswith("```"):
-            cleaned = cleaned[3:]
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]
-
-        return json.loads(cleaned.strip())
+        
+        # More robust cleaning
+        # Remove everything before the first `{`
+        first_brace = cleaned.find('{')
+        if first_brace != -1:
+            cleaned = cleaned[first_brace:]
+            
+        # Remove everything after the last `}`
+        last_brace = cleaned.rfind('}')
+        if last_brace != -1:
+            cleaned = cleaned[:last_brace+1]
+            
+        return json.loads(cleaned)
     except json.JSONDecodeError:
         print("⚠️ Failed to parse AI feedback JSON:", reply)
         return {
@@ -213,18 +219,24 @@ Be encouraging and specific. Avoid generic advice.
 
     # Parse JSON response
     import json
+    import re
 
     try:
         # Clean up potential markdown code blocks
         cleaned = reply.strip()
-        if cleaned.startswith("```json"):
-            cleaned = cleaned[7:]
-        if cleaned.startswith("```"):
-            cleaned = cleaned[3:]
-        if cleaned.endswith("```"):
-            cleaned = cleaned[:-3]
+        
+        # More robust cleaning
+        # Remove everything before the first `{`
+        first_brace = cleaned.find('{')
+        if first_brace != -1:
+            cleaned = cleaned[first_brace:]
+            
+        # Remove everything after the last `}`
+        last_brace = cleaned.rfind('}')
+        if last_brace != -1:
+            cleaned = cleaned[:last_brace+1]
 
-        return json.loads(cleaned.strip())
+        return json.loads(cleaned)
     except json.JSONDecodeError:
         print("⚠️ Failed to parse learning path JSON:", reply)
         return {
@@ -344,13 +356,8 @@ def search_resume(query, resume_id, k=3):
     # Try strict filter first
     try:
         all_docs = col.get(
-            where={
-                "$and": [
-                    {"doc_id": resume_id},
-                    {"type": "resume"}
-                ]
-            },
-            include=["documents"]
+            where={"$and": [{"doc_id": resume_id}, {"type": "resume"}]},
+            include=["documents"],
         )
 
         total = len(all_docs["documents"])
@@ -358,18 +365,12 @@ def search_resume(query, resume_id, k=3):
         # If nothing found, fallback to doc_id only
         if total == 0:
             print("⚠️ No docs found with type=resume, falling back to doc_id only")
-            all_docs = col.get(
-                where={"doc_id": resume_id},
-                include=["documents"]
-            )
+            all_docs = col.get(where={"doc_id": resume_id}, include=["documents"])
             total = len(all_docs["documents"])
 
     except Exception as e:
         print("❌ Metadata filter failed, fallback:", e)
-        all_docs = col.get(
-            where={"doc_id": resume_id},
-            include=["documents"]
-        )
+        all_docs = col.get(where={"doc_id": resume_id}, include=["documents"])
         total = len(all_docs["documents"])
 
     if total == 0:
@@ -384,18 +385,20 @@ def search_resume(query, resume_id, k=3):
         query_texts=[query],
         n_results=k,
         where={"doc_id": resume_id},
-        include=["documents", "distances", "metadatas"]
+        include=["documents", "distances", "metadatas"],
     )
 
     chunks = []
     for i, doc in enumerate(results["documents"][0]):
         meta = results["metadatas"][0][i] if results["metadatas"] else {}
-        chunks.append({
-            "text": doc,
-            "score": round(1 - results["distances"][0][i], 3),
-            "chunk_id": meta.get("chunk_id", i),
-            "preview": meta.get("preview", doc[:120])
-        })
+        chunks.append(
+            {
+                "text": doc,
+                "score": round(1 - results["distances"][0][i], 3),
+                "chunk_id": meta.get("chunk_id", i),
+                "preview": meta.get("preview", doc[:120]),
+            }
+        )
 
     return chunks
 
@@ -406,25 +409,21 @@ def search_job(query, job_id, k=3):
     results = col.query(
         query_texts=[query],
         n_results=k,
-        where={
-            "$and": [
-                {"doc_id": job_id},
-                {"type": "job"}
-            ]
-        },
-        include=["documents", "distances", "metadatas"]
+        where={"$and": [{"doc_id": job_id}, {"type": "job"}]},
+        include=["documents", "distances", "metadatas"],
     )
 
     chunks = []
     if results["documents"] and results["documents"][0]:
         for i, doc in enumerate(results["documents"][0]):
             meta = results["metadatas"][0][i] if results["metadatas"] else {}
-            chunks.append({
-                "text": doc,
-                "score": round(1 - results["distances"][0][i], 3),
-                "chunk_id": meta.get("chunk_id", i),
-                "preview": meta.get("preview", doc[:120])
-            })
+            chunks.append(
+                {
+                    "text": doc,
+                    "score": round(1 - results["distances"][0][i], 3),
+                    "chunk_id": meta.get("chunk_id", i),
+                    "preview": meta.get("preview", doc[:120]),
+                }
+            )
 
     return chunks
-

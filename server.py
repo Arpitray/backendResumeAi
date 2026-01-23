@@ -45,6 +45,7 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 # Use redis_client if needed, though interview_agent uses its own global REDIS connection
 redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 
+
 class QuestionRequest(BaseModel):
     resume_id: str
     question: str
