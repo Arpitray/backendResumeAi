@@ -63,18 +63,18 @@ Make your tone helpful and encouraging, not robotic.
     try:
         # Clean up potential markdown code blocks
         cleaned = reply.strip()
-        
+
         # More robust cleaning
         # Remove everything before the first `{`
-        first_brace = cleaned.find('{')
+        first_brace = cleaned.find("{")
         if first_brace != -1:
             cleaned = cleaned[first_brace:]
-            
+
         # Remove everything after the last `}`
-        last_brace = cleaned.rfind('}')
+        last_brace = cleaned.rfind("}")
         if last_brace != -1:
-            cleaned = cleaned[:last_brace+1]
-            
+            cleaned = cleaned[: last_brace + 1]
+
         return json.loads(cleaned)
     except json.JSONDecodeError:
         print("⚠️ Failed to parse AI feedback JSON:", reply)
@@ -83,98 +83,6 @@ Make your tone helpful and encouraging, not robotic.
             "suggestions": [],
             "error": "Failed to parse AI response",
         }
-
-
-async def match_resume_to_job(resume_id, job_id):
-    col = get_collection()
-
-    print("🔍 MATCHING")
-    print("Resume:", resume_id)
-    print("Job:", job_id)
-
-    # ---------------- FETCH DATA ----------------
-
-    resume_data = col.get(
-        where={"$and": [{"doc_id": resume_id}, {"type": "resume"}]},
-        include=["documents", "embeddings", "metadatas"],
-    )
-
-    job_data = col.get(
-        where={"$and": [{"doc_id": job_id}, {"type": "job"}]},
-        include=["documents", "embeddings", "metadatas"],
-    )
-
-    if not resume_data["documents"]:
-        return {"error": "Resume not found in vector store"}
-
-    if not job_data["documents"]:
-        return {"error": "Job not found in vector store"}
-
-    resume_embs = resume_data["embeddings"]
-    job_embs = job_data["embeddings"]
-
-    resume_docs = resume_data["documents"]
-    job_docs = job_data["documents"]
-
-    # ---------------- SIMILARITY MATCHING ----------------
-
-    scores = []
-    best_matches = []
-
-    for i, r_emb in enumerate(resume_embs):
-        best_score = 0
-        best_job_chunk = ""
-
-        for j, j_emb in enumerate(job_embs):
-            score = cosine_similarity(r_emb, j_emb)
-
-            if score > best_score:
-                best_score = score
-                best_job_chunk = job_docs[j]
-
-        scores.append(best_score)
-
-        best_matches.append(
-            {
-                "resume_chunk": resume_docs[i][:160],
-                "job_match": best_job_chunk[:160],
-                "score": round(float(best_score), 3),
-            }
-        )
-
-    avg_score = float(np.mean(scores))
-    percent = round(avg_score * 100, 2)
-
-    top_matches = sorted(best_matches, key=lambda x: x["score"], reverse=True)[:3]
-
-    # ---------------- AI RESUME COACH ----------------
-
-    print("🤖 Running AI Resume Coach...")
-
-    ai_feedback = await generate_ai_feedback(
-        resume_chunks=[m["resume_chunk"] for m in top_matches],
-        job_chunks=[m["job_match"] for m in top_matches],
-    )
-
-    # ---------------- LEARNING PATH AGENT ----------------
-
-    print("📚 Generating Skill Gap Roadmap...")
-
-    learning_agent_result = await generate_learning_path(
-        resume_text="\n".join(resume_docs[:3]),
-        job_text="\n".join(job_docs[:2]),
-    )
-
-    # ---------------- FINAL RESPONSE ----------------
-
-    return {
-        "match_score_percent": percent,
-        "resume_chunks": len(resume_embs),
-        "job_chunks": len(job_embs),
-        "top_matches": top_matches,
-        "ai_feedback": ai_feedback,
-        "learning_path": learning_agent_result,
-    }
 
 
 async def generate_learning_path(resume_text, job_text):
@@ -224,17 +132,17 @@ Be encouraging and specific. Avoid generic advice.
     try:
         # Clean up potential markdown code blocks
         cleaned = reply.strip()
-        
+
         # More robust cleaning
         # Remove everything before the first `{`
-        first_brace = cleaned.find('{')
+        first_brace = cleaned.find("{")
         if first_brace != -1:
             cleaned = cleaned[first_brace:]
-            
+
         # Remove everything after the last `}`
-        last_brace = cleaned.rfind('}')
+        last_brace = cleaned.rfind("}")
         if last_brace != -1:
-            cleaned = cleaned[:last_brace+1]
+            cleaned = cleaned[: last_brace + 1]
 
         return json.loads(cleaned)
     except json.JSONDecodeError:

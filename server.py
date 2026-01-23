@@ -8,20 +8,19 @@ from reader import read_pdf, chunk_text
 from memory import (
     get_job_chunks,
     get_resume_chunks,
-    match_resume_to_job,
     store_chunks,
     search_resume,
     search_job,
+    generate_ai_feedback,
+    generate_learning_path,
+    get_collection,
 )
+from core_match import run_match
 
 from fastapi.middleware.cors import CORSMiddleware
 from llm import call_answer_llm
 from pydantic import BaseModel
 from typing import Optional
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from interview_agent import (
     create_session,
     get_state,
@@ -30,11 +29,19 @@ from interview_agent import (
     evaluate_answer,
     generate_followup_question,
 )
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://solitaires.arpitray.me",
+        "https://frontend-resume-brown.vercel.app",
+        "http://localhost:3000",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -154,9 +161,73 @@ async def upload_job(req: JobRequest):
     return {"status": "job stored", "job_id": job_id, "chunks": len(chunks)}
 
 
-@app.get("/match/{resume_id}/{job_id}")
-async def match(resume_id: str, job_id: str):
-    return await match_resume_to_job(resume_id, job_id)
+@app.post("/match")
+async def match_resume(payload: dict):
+    resume_id = payload.get("resume_id")
+    job_id = payload.get("job_id")
+
+    if not resume_id or not job_id:
+        raise HTTPException(status_code=400, detail="Missing resume_id or job_id")
+
+    result, error = run_match(resume_id, job_id)
+    if error:
+        raise HTTPException(status_code=404, detail=error)
+
+    return result
+
+
+@app.post("/match/coach")
+async def ai_coach(payload: dict):
+    resume_id = payload.get("resume_id")
+    job_id = payload.get("job_id")
+
+    if not resume_id or not job_id:
+        raise HTTPException(status_code=400, detail="Missing resume_id or job_id")
+
+    match_data, error = run_match(resume_id, job_id)
+    if error:
+        raise HTTPException(status_code=404, detail=error)
+
+    print("🤖 Running AI Resume Coach...")
+
+    ai_feedback = await generate_ai_feedback(
+        resume_chunks=[m["resume_chunk"] for m in match_data["top_matches"]],
+        job_chunks=[m["job_match"] for m in match_data["top_matches"]],
+    )
+
+    return {"ai_feedback": ai_feedback}
+
+
+@app.post("/match/roadmap")
+async def learning_roadmap(payload: dict):
+    resume_id = payload.get("resume_id")
+    job_id = payload.get("job_id")
+
+    if not resume_id or not job_id:
+        raise HTTPException(status_code=400, detail="Missing resume_id or job_id")
+
+    col = get_collection()
+
+    resume_data = col.get(
+        where={"$and": [{"doc_id": resume_id}, {"type": "resume"}]},
+        include=["documents"],
+    )
+
+    job_data = col.get(
+        where={"$and": [{"doc_id": job_id}, {"type": "job"}]}, include=["documents"]
+    )
+
+    if not resume_data["documents"] or not job_data["documents"]:
+        raise HTTPException(status_code=404, detail="Resume or Job not found")
+
+    print("📚 Generating Skill Gap Roadmap...")
+
+    learning_agent_result = await generate_learning_path(
+        resume_text="\n".join(resume_data["documents"][:3]),
+        job_text="\n".join(job_data["documents"][:2]),
+    )
+
+    return learning_agent_result
 
 
 @app.post("/interview/start")
