@@ -158,7 +158,6 @@ Be encouraging and specific. Avoid generic advice.
 _chroma = None
 _collection = None
 
-print("🔥 MEMORY.PY LOADED FROM:", __file__)
 
 
 def get_job_chunks(job_id, k=5):
