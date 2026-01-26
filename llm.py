@@ -16,7 +16,7 @@ async def call_answer_llm(prompt: str) -> str:
         "X-Title": "AI-Career-Agent",
     }
     payload = {
-        "model": "mistralai/devstral-2512:free",
+        "model": "meta-llama/llama-3.3-70b-instruct:free",
         "messages": [
             {
                 "role": "system",
