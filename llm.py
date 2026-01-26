@@ -3,8 +3,6 @@ import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
-
-
 async def call_answer_llm(prompt: str) -> str:
     api_key = os.getenv("Mistral_API_KEY")
 
@@ -17,7 +15,6 @@ async def call_answer_llm(prompt: str) -> str:
         "HTTP-Referer": "http://localhost",
         "X-Title": "AI-Career-Agent",
     }
-
     payload = {
         "model": "mistralai/devstral-2512:free",
         "messages": [
@@ -29,7 +26,6 @@ async def call_answer_llm(prompt: str) -> str:
         ],
         "temperature": 0.3,
     }
-
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(
             "https://openrouter.ai/api/v1/chat/completions",
