@@ -209,8 +209,6 @@ def get_collection():
     if _collection is not None:
         return _collection
 
-    import chromadb
-    from chromadb.config import Settings
 
     _chroma = chromadb.Client(
         Settings(persist_directory="./vector_store", anonymized_telemetry=False)
