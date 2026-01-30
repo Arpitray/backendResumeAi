@@ -10,6 +10,10 @@ from llm import call_answer_llm
 # Load embedding model once
 _model = None
 
+# Global chroma client for persistence
+_chroma = None
+_collection = None
+
 
 def cosine_similarity(a, b):
     a = np.array(a)
@@ -155,11 +159,6 @@ Be encouraging and specific. Avoid generic advice.
         }
 
 
-_chroma = None
-_collection = None
-
-
-
 def get_job_chunks(job_id, k=5):
     col = get_collection()
 
@@ -209,14 +208,24 @@ def get_collection():
     if _collection is not None:
         return _collection
 
-
-    _chroma = chromadb.Client(
-        Settings(persist_directory="./vector_store", anonymized_telemetry=False)
-    )
+    # Compatible with both ChromaDB 0.3.x (old) and 0.4.x (new)
+    try:
+        # Try 0.4.x syntax
+        _chroma = chromadb.PersistentClient(
+            path="./vector_store", settings=Settings(anonymized_telemetry=False)
+        )
+    except AttributeError:
+        # Fallback to 0.3.x syntax
+        print("⚠️ Using ChromaDB 0.3.x compatibility mode")
+        _chroma = chromadb.Client(
+            Settings(
+                chroma_db_impl="duckdb+parquet",
+                persist_directory="./vector_store",
+                anonymized_telemetry=False,
+            )
+        )
 
     _collection = _chroma.get_or_create_collection("study_notes")
-    return _collection
-
     return _collection
 
 
@@ -248,6 +257,14 @@ def store_chunks(chunks, doc_id, doc_type="resume"):
 
     # Let Chroma handle internal embeddings (defaults to ONNX all-MiniLM-L6-v2)
     col.add(documents=chunks, metadatas=metadatas, ids=ids)
+
+    # Manual persist for older ChromaDB versions
+    global _chroma
+    if hasattr(_chroma, "persist"):
+        _chroma.persist()
+        print("💾 Data manually persisted (v0.3.x)")
+    else:
+        print("💾 Data auto-persisted (v0.4.x)")
 
     print("📦 Collection count after add:", col.count())
     print("✅ store_chunks() complete\n")
