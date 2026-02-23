@@ -3,13 +3,12 @@ uvicorn
 pydantic<2.0.0
 chromadb==0.4.22
 numpy==1.26.4
-torch==2.1.0+cpu
---extra-index-url https://download.pytorch.org/whl/cpu
+posthog
+onnxruntime
 pypdf
 redis
 httpx
 python-dotenv
-sentence-transformers==2.7.0
 huggingface-hub==0.19.4
 python-multipart
 faster-whisper>=1.1.0

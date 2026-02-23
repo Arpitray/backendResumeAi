@@ -1,7 +1,5 @@
-from xml.parsers.expat import model
 import chromadb
 from chromadb.config import Settings
-from sentence_transformers import SentenceTransformer
 import re
 import numpy as np
 
@@ -208,22 +206,30 @@ def get_collection():
     if _collection is not None:
         return _collection
 
+    # Ensure vector_store directory exists before initializing Chroma
+    os.makedirs("./vector_store", exist_ok=True)
+
     # Compatible with both ChromaDB 0.3.x (old) and 0.4.x (new)
     try:
         # Try 0.4.x syntax
         _chroma = chromadb.PersistentClient(
-            path="./vector_store", settings=Settings(anonymized_telemetry=False)
+            path="./vector_store", 
+            settings=Settings(anonymized_telemetry=False, is_persistent=True)
         )
-    except AttributeError:
-        # Fallback to 0.3.x syntax
-        print("⚠️ Using ChromaDB 0.3.x compatibility mode")
-        _chroma = chromadb.Client(
-            Settings(
-                chroma_db_impl="duckdb+parquet",
-                persist_directory="./vector_store",
-                anonymized_telemetry=False,
+    except Exception as e:
+        print(f"⚠️ ChromaDB initialization warning: {e}")
+        # Fallback to 0.3.x syntax or a more basic client
+        try:
+            _chroma = chromadb.Client(
+                Settings(
+                    chroma_db_impl="duckdb+parquet",
+                    persist_directory="./vector_store",
+                    anonymized_telemetry=False,
+                )
             )
-        )
+        except Exception as e2:
+            print(f"❌ Failed to initialize ChromaDB: {e2}")
+            raise e2
 
     _collection = _chroma.get_or_create_collection("study_notes")
     return _collection
