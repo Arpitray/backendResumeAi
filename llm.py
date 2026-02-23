@@ -3,20 +3,19 @@ import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
+
 async def call_answer_llm(prompt: str) -> str:
-    api_key = os.getenv("Mistral_API_KEY")
+    api_key = os.getenv("OPENAI_API_KEY")
 
     if not api_key:
-        raise RuntimeError("Mistral_API_KEY not set")
+        raise RuntimeError("OPENAI_API_KEY not set")
 
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost",
-        "X-Title": "AI-Career-Agent",
     }
     payload = {
-        "model": "meta-llama/llama-3.3-70b-instruct:free",
+        "model": "gpt-4o-mini",
         "messages": [
             {
                 "role": "system",
@@ -28,7 +27,7 @@ async def call_answer_llm(prompt: str) -> str:
     }
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
+            "https://api.openai.com/v1/chat/completions",
             headers=headers,
             json=payload,
         )

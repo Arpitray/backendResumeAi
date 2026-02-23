@@ -12,21 +12,19 @@ load_dotenv()
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 REDIS = redis.from_url(REDIS_URL, decode_responses=True)
 
-MISTRAL_KEY = os.getenv("Mistral_API_KEY")
+OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 
 # ---------------- LLM ----------------
 
 
 async def call_llm(prompt):
     headers = {
-        "Authorization": f"Bearer {MISTRAL_KEY}",
+        "Authorization": f"Bearer {OPENAI_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost",
-        "X-Title": "Hybrid-Interview-Agent",
     }
 
     payload = {
-        "model": "meta-llama/llama-3.3-70b-instruct:free",
+        "model": "gpt-4o-mini",
         "messages": [
             {
                 "role": "system",
@@ -39,7 +37,7 @@ async def call_llm(prompt):
 
     async with httpx.AsyncClient(timeout=60) as client:
         r = await client.post(
-            "https://openrouter.ai/api/v1/chat/completions",
+            "https://api.openai.com/v1/chat/completions",
             headers=headers,
             json=payload,
         )
