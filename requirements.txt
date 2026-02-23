@@ -1,8 +1,9 @@
 fastapi
 uvicorn
+pydantic<2.0.0
 chromadb==0.4.22
 numpy==1.26.4
-torch==2.10.0+cpu
+torch==2.1.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
 pypdf
 redis
@@ -11,3 +12,12 @@ python-dotenv
 sentence-transformers==2.7.0
 huggingface-hub==0.19.4
 python-multipart
+faster-whisper>=1.1.0
+edge-tts>=6.1.12
+sqlalchemy[asyncio]>=2.0.46
+asyncpg>=0.31.0
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.5.0
+slowapi>=0.1.9
+email-validator>=2.3.0
+bcrypt==3.2.2
