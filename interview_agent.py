@@ -5,6 +5,7 @@ import uuid
 import redis
 import numpy as np
 import httpx
+from fastapi import HTTPException
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -42,7 +43,13 @@ async def call_llm(prompt):
             json=payload,
         )
 
-    return r.json()["choices"][0]["message"]["content"]
+    data = r.json()
+    if "choices" not in data:
+        error_msg = data.get("error", {}).get("message", "Unknown OpenAI Error")
+        print(f"❌ LLM API Error: {error_msg}")
+        raise HTTPException(status_code=500, detail=f"LLM Service Error: {error_msg}")
+
+    return data["choices"][0]["message"]["content"]
 
 
 # ---------------- SESSION ----------------

@@ -1,5 +1,6 @@
 import os
 import httpx
+from fastapi import HTTPException
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -8,7 +9,7 @@ async def call_answer_llm(prompt: str) -> str:
     api_key = os.getenv("OPENAI_API_KEY")
 
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY not set")
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY not set")
 
     headers = {
         "Authorization": f"Bearer {api_key}",
