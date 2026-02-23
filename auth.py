@@ -19,6 +19,7 @@ Exports used across the app
 
 import os
 import uuid
+import bcrypt
 from datetime import datetime, timedelta, timezone
 from typing import Literal, Optional
 
@@ -27,7 +28,6 @@ from dotenv import load_dotenv
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,17 +47,26 @@ REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
 
 # ── Password hashing (bcrypt) ─────────────────────────────────────────────────
 
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-
 def hash_password(plain: str) -> str:
-    """Returns bcrypt hash of plaintext password."""
-    return _pwd_context.hash(plain)
+    """
+    Returns bcrypt hash of plaintext password.
+    Directly uses bcrypt library to avoid passlib <-> bcrypt 4.0 conflicts.
+    """
+    # bcrypt hard limit is 72 bytes. truncate to ensure no ValueError.
+    pwd_bytes = plain.encode("utf-8")[:72]
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(pwd_bytes, salt)
+    return hashed.decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
     """Returns True if plaintext matches the bcrypt hash."""
-    return _pwd_context.verify(plain, hashed)
+    try:
+        pwd_bytes = plain.encode("utf-8")[:72]
+        hashed_bytes = hashed.encode("utf-8")
+        return bcrypt.checkpw(pwd_bytes, hashed_bytes)
+    except Exception:
+        return False
 
 
 # ── Token blacklist (Redis) ───────────────────────────────────────────────────

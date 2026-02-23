@@ -17,6 +17,14 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set in environment variables.")
 
+# Ensure the URL uses the asyncpg driver if it's a postgresql URL
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+# Fix for Neon/asyncpg: replace sslmode=require with ssl=require
+if "sslmode=require" in DATABASE_URL:
+    DATABASE_URL = DATABASE_URL.replace("sslmode=require", "ssl=require")
+
 # ── Engine ────────────────────────────────────────────────────────────────────
 # pool_pre_ping=True automatically reconnects dropped connections
 engine = create_async_engine(
