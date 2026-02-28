@@ -4,6 +4,10 @@ from chromadb.config import Settings
 import re
 import numpy as np
 
+# Suppress ChromaDB telemetry before any chromadb usage
+os.environ["ANONYMIZED_TELEMETRY"] = "False"
+os.environ["CHROMA_TELEMETRY"] = "False"
+
 from llm import call_answer_llm
 
 # Load embedding model once
