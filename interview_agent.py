@@ -25,7 +25,7 @@ async def call_llm(prompt):
     }
 
     payload = {
-        "model": "meta-llama/llama-3.2-3b-instruct:free",
+        "model": "openrouter/free",
         "messages": [
             {
                 "role": "system",
