@@ -16,7 +16,7 @@ async def call_answer_llm(prompt: str) -> str:
         "Content-Type": "application/json",
     }
     payload = {
-        "model": "gpt-4o-mini",
+        "model": "meta-llama/llama-3.2-3b-instruct:free",
         "messages": [
             {
                 "role": "system",
@@ -28,7 +28,7 @@ async def call_answer_llm(prompt: str) -> str:
     }
     async with httpx.AsyncClient(timeout=60) as client:
         response = await client.post(
-            "https://api.openai.com/v1/chat/completions",
+            "https://openrouter.ai/api/v1/chat/completions",
             headers=headers,
             json=payload,
         )

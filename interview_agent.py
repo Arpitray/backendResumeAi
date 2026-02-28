@@ -25,7 +25,7 @@ async def call_llm(prompt):
     }
 
     payload = {
-        "model": "gpt-4o-mini",
+        "model": "meta-llama/llama-3.2-3b-instruct:free",
         "messages": [
             {
                 "role": "system",
@@ -38,15 +38,23 @@ async def call_llm(prompt):
 
     async with httpx.AsyncClient(timeout=60) as client:
         r = await client.post(
-            "https://api.openai.com/v1/chat/completions",
+            "https://openrouter.ai/api/v1/chat/completions",
             headers=headers,
             json=payload,
         )
 
+    # Check for HTTP errors first
+    if r.status_code != 200:
+        print(f"❌ OpenAI API HTTP Error {r.status_code}: {r.text}")
+        raise HTTPException(
+            status_code=r.status_code, 
+            detail=f"OpenAI API Error: {r.text}"
+        )
+
     data = r.json()
-    if "choices" not in data:
+    if not data or "choices" not in data:
         error_msg = data.get("error", {}).get("message", "Unknown OpenAI Error")
-        print(f"❌ LLM API Error: {error_msg}")
+        print(f"❌ LLM API Response Error: {error_msg}")
         raise HTTPException(status_code=500, detail=f"LLM Service Error: {error_msg}")
 
     return data["choices"][0]["message"]["content"]
